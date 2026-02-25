@@ -1,28 +1,5 @@
 <div align="center" markdown>
   <h1>Remnawave ShopBot | Telegram-бот для продажи VPN</h1>
-  <p align="center">
-    <a href="https://github.com/FDGRPNekko/remnawave-shopbot/releases" target="_blank">
-      <img alt="release" src="https://img.shields.io/github/v/release/tweopi/remnawave-shopbot?label=release&style=flat-square">
-    </a>
-    <a href="https://github.com/FDGRPNekko/remnawave-shopbot/releases" target="_blank">
-      <img alt="downloads" src="https://img.shields.io/github/downloads/tweopi/remnawave-shopbot/total?label=downloads&style=flat-square">
-    </a>
-    <a href="https://github.com/FDGRPNekko/remnawave-shopbot/blob/main/LICENSE" target="_blank">
-      <img alt="license" src="https://img.shields.io/github/license/tweopi/remnawave-shopbot?label=license&style=flat-square">
-    </a>
-    <a href="https://github.com/FDGRPNekko/remnawave-shopbot/commits" target="_blank">
-      <img alt="last-commit" src="https://img.shields.io/github/last-commit/tweopi/remnawave-shopbot?label=last%20commit&style=flat-square">
-    </a>
-    <a href="https://github.com/FDGRPNekko/remnawave-shopbot/issues" target="_blank">
-      <img alt="issues" src="https://img.shields.io/github/issues/tweopi/remnawave-shopbot?label=issues&style=flat-square">
-    </a>
-    <a href="https://github.com/FDGRPNekko/remnawave-shopbot/stargazers" target="_blank">
-      <img alt="stars" src="https://img.shields.io/github/stars/tweopi/remnawave-shopbot?label=stars&style=flat-square">
-    </a>
-    <a href="https://www.python.org/downloads/" target="_blank">
-      <img alt="python" src="https://img.shields.io/badge/python-%E2%89%A53.10-blue?style=flat-square">
-    </a>
-  </p>
 </div>
 
 **Remnawave ShopBot** — комплексное решение для автоматизированной продажи VPN‑конфигураций через Telegram с веб‑панелью на базе Tabler и интеграцией с Remnawave Platform.
