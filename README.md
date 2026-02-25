@@ -94,7 +94,7 @@
 2) Выполните:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/FDGRPNekko/remnawave-shopbot/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/FDGRPNekko/remnawave_shopbot/main/install.sh | bash
 ```
 
 3) Следуйте инструкциям установщика:
@@ -209,7 +209,7 @@ curl -sSL https://raw.githubusercontent.com/FDGRPNekko/remnawave-shopbot/main/in
 ---
 
 ## 🔄 Управление и обновление
-Все команды выполняются в каталоге проекта на сервере (папка `remnawave-shopbot`).
+Все команды выполняются в каталоге проекта на сервере (папка `remnawave_shopbot`).
 
 Просмотр логов в реальном времени:
 ```bash
