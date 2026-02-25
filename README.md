@@ -1,13 +1,6 @@
 <div align="center" markdown>
   <h1>Remnawave ShopBot | Telegram-бот для продажи VPN</h1>
   <p align="center">
-    <a href="#-%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B0-%D0%BF%D0%BE%D0%B4-%D0%BA%D0%BB%D1%8E%D1%87">Установка и обновление</a> •
-    <a href="#-%D0%B1%D0%B0%D0%B3%D0%B8-%D0%B8-%D0%BF%D1%80%D0%B5%D0%B4%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%B8%D1%8F">Баги и предложения</a> •
-    <a href="#%D0%BF%D0%BE%D0%B4%D0%B4%D0%B5%D1%80%D0%B6%D0%BA%D0%B0-%D0%BF%D0%BE-%D0%BF%D1%80%D0%BE%D0%B5%D0%BA%D1%82%D1%83">Поддержка по проекту</a> •
-    <a href="https://t.me/+0a2q3H5G7JU4NDMy">Группа для соискателей</a> •
-    <a href="#-%D0%BF%D0%BE%D0%B4%D0%B4%D0%B5%D1%80%D0%B6%D0%B0%D1%82%D1%8C-%D1%80%D0%B0%D0%B7%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%BA%D1%83">Поддержать проект</a>
-  </p>
-  <p align="center">
     <a href="https://github.com/FDGRPNekko/remnawave-shopbot/releases" target="_blank">
       <img alt="release" src="https://img.shields.io/github/v/release/tweopi/remnawave-shopbot?label=release&style=flat-square">
     </a>
@@ -113,11 +106,6 @@
 1) Сервер Ubuntu/Debian с доступом по SSH.
 2) Домен, A‑запись которого указывает на IP сервера.
 3) Установленная Remnawave Platform на целевых хостах.
-
----
-
-## 💻 Где купить сервер/домен
-Если нет сервера/домена — можно приобрести здесь: [Hostoff](https://hostoff.net/vps?ref=CODEA251D760)
 
 ---
 
@@ -263,22 +251,10 @@ docker-compose up -d
 
 **Обновить до последней версии:**
 ```bash
-curl -sSL https://raw.githubusercontent.com/tweopi/remnawave-shopbot/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/FDGRPNekko/remnawave_shopbot/main/install.sh | bash
 
 docker-compose down && docker-compose up -d --build
 ```
-
----
-
-## 🙌 Баги и предложения
-Нашли баг или есть идея? Создайте Issue или пришлите Pull Request. Также можно связаться: [@tweopi](https://t.me/tweopi)
-
-## 💎 Поддержать разработку
-**СБП/Карта РФ:** [Нажать чтобы поддержать](https://yookassa.ru/my/i/aJiSmSUeUie5/l)
-**Т-Банк:**[Нажать чтобы поддержать](https://tbank.ru/cf/1JpNWKAFzqR)
-
-## Поддержка по проекту
-Техподдержка и сообщество: [t_shift_supportbot](https://t.me/t_shift_supportbot)
 
 ## Лицензия
 Проект распространяется по лицензии [GPLv3](LICENSE).
