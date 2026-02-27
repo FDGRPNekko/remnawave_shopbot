@@ -1662,11 +1662,13 @@ def get_user_router() -> Router:
             except Exception:
                 trial_limit_bytes = None
 
+            trial_strategy = (get_setting("traffic_reset_strategy") or "").strip() or "NO_RESET"
             result = await remnawave_api.create_or_update_key_on_host(
                 host_name=host_name,
                 email=candidate_email,
                 days_to_add=int(get_setting("trial_duration_days")),
                 traffic_limit_bytes=trial_limit_bytes,
+                traffic_limit_strategy=trial_strategy,
             )
             if not result:
                 await message.edit_text("❌ Не удалось создать пробный ключ. Ошибка на сервере.")
@@ -1678,6 +1680,7 @@ def get_user_router() -> Router:
                 user_id=user_id,
                 payload=result,
                 host_name=host_name,
+                tag="TRIAL",
             )
             
             await message.delete()
@@ -1715,6 +1718,14 @@ def get_user_router() -> Router:
             key_number = next((i + 1 for i, key in enumerate(all_user_keys) if key['key_id'] == key_id_to_show), 0)
             
             final_text = get_key_info_text(key_number, expiry_date, created_date, connection_string)
+
+            tag = (key_data.get('tag') or "").strip().upper()
+            if tag == "TRIAL":
+                final_text += (
+                    "\n\n⚠️ Это пробная подписка (trial).\n"
+                    "Её нельзя продлить, и через 24 часа после окончания срока действия она будет автоматически удалена.\n"
+                    "Если сервис вам понравился — оформите полноценную подписку."
+                )
             
             await callback.message.edit_text(
                 text=final_text,
@@ -1845,11 +1856,13 @@ def get_user_router() -> Router:
         email = key_data.get('key_email')
         try:
 
+            switch_strategy = (get_setting("traffic_reset_strategy") or "").strip() or "NO_RESET"
             result = await remnawave_api.create_or_update_key_on_host(
                 new_host_name,
                 email,
                 days_to_add=None,
-                expiry_timestamp_ms=expiry_timestamp_ms_exact
+                expiry_timestamp_ms=expiry_timestamp_ms_exact,
+                traffic_limit_strategy=switch_strategy,
             )
             if not result:
                 await callback.message.edit_text(
@@ -2142,6 +2155,16 @@ def get_user_router() -> Router:
 
         if not key_data or key_data['user_id'] != callback.from_user.id:
             await callback.message.edit_text("❌ Ошибка: Ключ не найден или не принадлежит вам.")
+            return
+        tag = (key_data.get('tag') or "").strip().upper()
+        if tag == "TRIAL":
+            await callback.message.edit_text(
+                "⚠️ Этот ключ — пробный (trial).\n\n"
+                "Продление пробной подписки недоступно. "
+                "Через 24 часа после окончания срока действия этот пробный ключ будет автоматически удалён.\n\n"
+                "Чтобы продолжить пользоваться VPN, оформите полноценную подписку в разделе «Купить ключ».",
+                reply_markup=keyboards.create_back_to_menu_keyboard(),
+            )
             return
         
         host_name = key_data.get('host_name')
@@ -3117,11 +3140,13 @@ async def process_successful_payment(bot: Bot, metadata: dict):
                 return
             candidate_email = existing_key['key_email']
 
+        traffic_reset_strategy = (get_setting("traffic_reset_strategy") or "").strip() or "NO_RESET"
         result = await remnawave_api.create_or_update_key_on_host(
             host_name=host_name,
             email=candidate_email,
             days_to_add=int(months * 30),
             traffic_limit_bytes=traffic_limit_bytes,
+            traffic_limit_strategy=traffic_reset_strategy,
         )
         if not result:
             await processing_message.edit_text("❌ Не удалось создать/обновить ключ на панели Remnawave.")

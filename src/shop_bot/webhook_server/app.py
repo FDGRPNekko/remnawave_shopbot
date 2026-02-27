@@ -67,6 +67,7 @@ ALL_SETTINGS_KEYS = [
     "referral_discount", "ton_wallet_address", "tonapi_key",
     "force_subscription",
     "trial_enabled", "trial_duration_days", "trial_traffic_limit_gb",
+    "traffic_reset_strategy",
     "enable_referrals", "minimum_withdrawal",
 
     "enable_fixed_referral_bonus", "fixed_referral_bonus_amount",
@@ -798,8 +799,12 @@ def create_webhook_app(bot_controller_instance):
             Remnawave_uuid = str(uuid.uuid4())
 
         result = None
+        strategy = (get_setting("traffic_reset_strategy") or "").strip() or "NO_RESET"
         try:
-            result = asyncio.run(remnawave_api.create_or_update_key_on_host(host_name, key_email, expiry_timestamp_ms=expiry_ms or None))
+            result = asyncio.run(remnawave_api.create_or_update_key_on_host(
+                host_name, key_email, expiry_timestamp_ms=expiry_ms or None,
+                traffic_limit_strategy=strategy,
+            ))
         except Exception as e:
             logger.error(f"Не удалось создать/обновить ключ на хосте: {e}")
             result = None
@@ -906,6 +911,7 @@ def create_webhook_app(bot_controller_instance):
             if expiry_ms is None and days_total > 0:
                 expiry_ms = int((datetime.utcnow() + timedelta(days=days_total)).replace(tzinfo=timezone.utc).timestamp() * 1000)
 
+            strategy = (get_setting("traffic_reset_strategy") or "").strip() or "NO_RESET"
             try:
                 result = asyncio.run(remnawave_api.create_or_update_key_on_host(
                     host_name,
@@ -913,6 +919,7 @@ def create_webhook_app(bot_controller_instance):
                     expiry_timestamp_ms=expiry_ms or None,
                     description=comment or None,
                     traffic_limit_bytes=traffic_limit_bytes,
+                    traffic_limit_strategy=strategy,
                 ))
             except Exception as e:
                 result = None
@@ -984,6 +991,7 @@ def create_webhook_app(bot_controller_instance):
                 attempt += 1
 
 
+            strategy = (get_setting("traffic_reset_strategy") or "").strip() or "NO_RESET"
             try:
                 result = asyncio.run(remnawave_api.create_or_update_key_on_host(
                     host_name,
@@ -992,6 +1000,7 @@ def create_webhook_app(bot_controller_instance):
                     description=comment or 'Gift key (created via admin panel)',
                     tag='GIFT',
                     traffic_limit_bytes=traffic_limit_bytes,
+                    traffic_limit_strategy=strategy,
                 ))
             except Exception as e:
                 logger.error(f"Создание подарочного ключа: ошибка remnawave: {e}")
@@ -1092,11 +1101,13 @@ def create_webhook_app(bot_controller_instance):
             new_ms = int(new_dt.timestamp() * 1000)
 
 
+            strategy = (get_setting("traffic_reset_strategy") or "").strip() or "NO_RESET"
             try:
                 result = asyncio.run(remnawave_api.create_or_update_key_on_host(
                     host_name=key.get('host_name'),
                     email=key.get('key_email'),
-                    expiry_timestamp_ms=new_ms
+                    expiry_timestamp_ms=new_ms,
+                    traffic_limit_strategy=strategy,
                 ))
             except Exception as e:
                 result = None

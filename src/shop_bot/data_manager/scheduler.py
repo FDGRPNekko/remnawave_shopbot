@@ -181,11 +181,15 @@ async def sync_keys_with_panels():
                 except Exception:
                     expiry_date = None
 
-            if expiry_date and expiry_date < now - timedelta(days=5):
+            tag = (db_key.get('tag') or "").strip().upper()
+            days_threshold = 1 if tag == "TRIAL" else 5
+
+            if expiry_date and expiry_date < now - timedelta(days=days_threshold):
                 logger.debug(
-                    "Scheduler: Ключ '%s' (host '%s') просрочен более 5 дней. Удаляю пользователя из Remnawave и БД.",
+                    "Scheduler: Ключ '%s' (host '%s') просрочен более %s дней. Удаляю пользователя из Remnawave и БД.",
                     raw_email,
                     host_name,
+                    days_threshold,
                 )
                 try:
                     await remnawave_api.delete_client_on_host(host_name, remote_email or raw_email)

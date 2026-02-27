@@ -534,19 +534,29 @@ def create_keys_management_keyboard(keys: list) -> InlineKeyboardMarkup:
 def create_key_info_keyboard(key_id: int, subscription_url: str | None = None) -> InlineKeyboardMarkup:
     """Создает клавиатуру для информации о ключе. Если subscription_url не передан, пытается получить из БД."""
     from shop_bot.data_manager import remnawave_repository as rw_repo
-    
-    # Если subscription_url не передан, попытаемся получить из базы данных
-    if subscription_url is None:
+
+    key_data = None
+    try:
+        key_data = rw_repo.get_key_by_id(key_id)
+    except Exception:
+        key_data = None
+
+    if subscription_url is None and key_data:
         try:
-            key_data = rw_repo.get_key_by_id(key_id)
-            if key_data:
-                subscription_url = key_data.get('subscription_url') or key_data.get('connection_string')
+            subscription_url = key_data.get('subscription_url') or key_data.get('connection_string')
         except Exception:
             subscription_url = None
 
+    is_trial = False
+    if key_data:
+        try:
+            is_trial = (key_data.get('tag') or "").strip().upper() == "TRIAL"
+        except Exception:
+            is_trial = False
 
     builder = InlineKeyboardBuilder()
-    builder.button(text="➕ Продлить этот ключ", callback_data=f"extend_key_{key_id}")
+    if not is_trial:
+        builder.button(text="➕ Продлить этот ключ", callback_data=f"extend_key_{key_id}")
 
     if subscription_url:
         builder.button(text="🔗 Открыть подписку", url=subscription_url)

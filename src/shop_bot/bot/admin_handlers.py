@@ -1756,8 +1756,11 @@ def get_admin_router() -> Router:
             await state.clear()
             return
 
+        strategy = (get_setting("traffic_reset_strategy") or "").strip() or "NO_RESET"
         try:
-            resp = await create_or_update_key_on_host(host, email, days_to_add=days)
+            resp = await create_or_update_key_on_host(
+                host, email, days_to_add=days, traffic_limit_strategy=strategy
+            )
         except Exception as e:
             logger.error(f"Продление ключа админом: не удалось обновить хост для ключа #{key_id}: {e}")
             resp = None
@@ -2250,8 +2253,11 @@ def get_admin_router() -> Router:
         generated_email = candidate_email
 
 
+        strategy = (get_setting("traffic_reset_strategy") or "").strip() or "NO_RESET"
         try:
-            host_resp = await create_or_update_key_on_host(host_name, generated_email, days_to_add=days)
+            host_resp = await create_or_update_key_on_host(
+                host_name, generated_email, days_to_add=days, traffic_limit_strategy=strategy
+            )
         except Exception as e:
             host_resp = None
             logging.error(f"Gift flow: failed to create client on host '{host_name}' for user {user_id}: {e}")
@@ -2724,9 +2730,12 @@ def get_admin_router() -> Router:
             await message.answer("❌ У ключа отсутствуют данные о хосте или email")
             return
 
+        strategy = (get_setting("traffic_reset_strategy") or "").strip() or "NO_RESET"
         resp = None
         try:
-            resp = await create_or_update_key_on_host(host, email, days_to_add=days)
+            resp = await create_or_update_key_on_host(
+                host, email, days_to_add=days, traffic_limit_strategy=strategy
+            )
         except Exception as e:
             logger.error(f"Поток продления: не удалось обновить клиента на хосте '{host}' для ключа #{key_id}: {e}")
         if not resp or not resp.get('client_uuid') or not resp.get('expiry_timestamp_ms'):

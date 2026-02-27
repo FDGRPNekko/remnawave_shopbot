@@ -103,6 +103,22 @@
 		<section class="settings-section" id="hosts">
 			<h2>Управление Хостами (Серверами)</h2>
 
+			<div class="card mb-4">
+				<div class="card-header"><h3 class="card-title">Глобальные настройки тарифов</h3></div>
+				<div class="card-body">
+					<div class="mb-3">
+						<label class="form-label" for="traffic_reset_strategy">Сброс трафика для подписок</label>
+						<select class="form-select form-control pill" id="traffic_reset_strategy" name="traffic_reset_strategy">
+							<option value="NO_RESET" {% if (settings.traffic_reset_strategy or 'NO_RESET') == 'NO_RESET' %}selected{% endif %}>Никогда (трафик не сбрасывается)</option>
+							<option value="RESET_DAILY" {% if settings.traffic_reset_strategy == 'RESET_DAILY' %}selected{% endif %}>Ежедневно</option>
+							<option value="RESET_WEEKLY" {% if settings.traffic_reset_strategy == 'RESET_WEEKLY' %}selected{% endif %}>Еженедельно</option>
+							<option value="RESET_MONTHLY" {% if settings.traffic_reset_strategy == 'RESET_MONTHLY' %}selected{% endif %}>Ежемесячно</option>
+						</select>
+						<div class="form-text">Применяется ко всем новым и продлеваемым подпискам (Remnawave).</div>
+					</div>
+				</div>
+			</div>
+
 			<div class="row g-3 align-items-start">
 				<div class="col-12 col-lg-5">
 					<div class="host-card">
