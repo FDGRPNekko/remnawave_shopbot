@@ -475,6 +475,8 @@ async def create_or_update_key_on_host(
     *,
     description: str | None = None,
     tag: str | None = None,
+    traffic_limit_bytes: int | None = None,
+    traffic_limit_strategy: str | None = None,
 ) -> dict | None:
     """Legacy совместимость: создаёт/обновляет пользователя Remnawave и возвращает данные по ключу."""
     try:
@@ -520,8 +522,10 @@ async def create_or_update_key_on_host(
                 # Новый пользователь - считаем от сегодня
                 target_dt = now_dt + timedelta(days=days)
 
-        traffic_limit_bytes = squad.get('default_traffic_limit_bytes')
-        traffic_limit_strategy = squad.get('default_traffic_strategy') or 'NO_RESET'
+        if traffic_limit_bytes is None:
+            traffic_limit_bytes = squad.get('default_traffic_limit_bytes')
+        if traffic_limit_strategy is None:
+            traffic_limit_strategy = squad.get('default_traffic_strategy') or 'NO_RESET'
 
         user_payload = await ensure_user(
             host_name=host_name,
@@ -616,4 +620,35 @@ async def delete_client_on_host(host_name: str, client_email: str) -> bool:
         logger.error("Remnawave: ошибка удаления пользователя %s: %s", client_email, exc)
     except Exception:
         logger.exception("Remnawave: непредвиденная ошибка удаления пользователя %s", client_email)
+    return False
+
+
+async def delete_all_hwid_devices_for_user(user_uuid: str, *, host_name: str | None = None) -> bool:
+    """Удалить все HWID‑устройства, привязанные к пользователю Remnawave."""
+    if not user_uuid:
+        return False
+    try:
+        path = "/api/hwid/devices/delete-all"
+        payload = {"userUuid": str(user_uuid).strip()}
+        if host_name:
+            await _request_for_host(
+                host_name,
+                "POST",
+                path,
+                json_payload=payload,
+                expected_status=(200, 204),
+            )
+        else:
+            await _request(
+                "POST",
+                path,
+                json_payload=payload,
+                expected_status=(200, 204),
+            )
+        logger.info("Remnawave: все HWID‑устройства удалены для пользователя %s", user_uuid)
+        return True
+    except RemnawaveAPIError as exc:
+        logger.error("Remnawave: ошибка удаления HWID‑устройств для пользователя %s: %s", user_uuid, exc)
+    except Exception:
+        logger.exception("Remnawave: непредвиденная ошибка удаления HWID‑устройств для пользователя %s", user_uuid)
     return False

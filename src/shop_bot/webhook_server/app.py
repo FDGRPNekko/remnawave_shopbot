@@ -64,7 +64,10 @@ ALL_SETTINGS_KEYS = [
     "telegram_bot_username", "admin_telegram_id", "yookassa_shop_id",
     "yookassa_secret_key", "sbp_enabled", "receipt_email", "cryptobot_token",
     "heleket_merchant_id", "heleket_api_key", "domain", "referral_percentage",
-    "referral_discount", "ton_wallet_address", "tonapi_key", "force_subscription", "trial_enabled", "trial_duration_days", "enable_referrals", "minimum_withdrawal",
+    "referral_discount", "ton_wallet_address", "tonapi_key",
+    "force_subscription",
+    "trial_enabled", "trial_duration_days", "trial_traffic_limit_gb",
+    "enable_referrals", "minimum_withdrawal",
 
     "enable_fixed_referral_bonus", "fixed_referral_bonus_amount",
 
@@ -769,6 +772,7 @@ def create_webhook_app(bot_controller_instance):
                     "plan_name": p.get('plan_name'),
                     "months": p.get('months'),
                     "price": p.get('price'),
+                    "traffic_limit_bytes": p.get('traffic_limit_bytes'),
                 } for p in plans
             ]
             return jsonify({"ok": True, "items": data})
@@ -865,6 +869,7 @@ def create_webhook_app(bot_controller_instance):
                 return jsonify({"ok": False, "error": "invalid_expiry"}), 400
 
         days_total = 0
+        traffic_limit_bytes: int | None = None
         if plan_id:
             plan = get_plan_by_id(plan_id)
             if plan:
@@ -873,6 +878,12 @@ def create_webhook_app(bot_controller_instance):
                 except Exception:
                     months = 0
                 days_total += months * 30
+                try:
+                    plan_limit = int(plan.get('traffic_limit_bytes') or 0)
+                except Exception:
+                    plan_limit = 0
+                if plan_limit > 0:
+                    traffic_limit_bytes = plan_limit
         if custom_days_raw:
             try:
                 days_total += max(0, int(custom_days_raw))
@@ -900,6 +911,8 @@ def create_webhook_app(bot_controller_instance):
                     host_name,
                     key_email,
                     expiry_timestamp_ms=expiry_ms or None,
+                    description=comment or None,
+                    traffic_limit_bytes=traffic_limit_bytes,
                 ))
             except Exception as e:
                 result = None
@@ -978,6 +991,7 @@ def create_webhook_app(bot_controller_instance):
                     expiry_timestamp_ms=expiry_ms or None,
                     description=comment or 'Gift key (created via admin panel)',
                     tag='GIFT',
+                    traffic_limit_bytes=traffic_limit_bytes,
                 ))
             except Exception as e:
                 logger.error(f"Создание подарочного ключа: ошибка remnawave: {e}")
@@ -2110,11 +2124,23 @@ def create_webhook_app(bot_controller_instance):
     @flask_app.route('/add-plan', methods=['POST'])
     @login_required
     def add_plan_route():
+        traffic_limit_bytes: int | None = None
+        traffic_limit_gb_raw = request.form.get('traffic_limit_gb')
+        if traffic_limit_gb_raw not in (None, ''):
+            try:
+                traffic_limit_gb = int(traffic_limit_gb_raw)
+            except (TypeError, ValueError):
+                traffic_limit_gb = 0
+            if traffic_limit_gb > 0:
+                if traffic_limit_gb > 9999:
+                    traffic_limit_gb = 9999
+                traffic_limit_bytes = traffic_limit_gb * 1024 * 1024 * 1024
         create_plan(
             host_name=request.form['host_name'],
             plan_name=request.form['plan_name'],
             months=int(request.form['months']),
-            price=float(request.form['price'])
+            price=float(request.form['price']),
+            traffic_limit_bytes=traffic_limit_bytes,
         )
         flash(f"Новый тариф для хоста '{request.form['host_name']}' добавлен.", 'success')
         return redirect(url_for('settings_page', tab='hosts'))
@@ -2132,6 +2158,7 @@ def create_webhook_app(bot_controller_instance):
         plan_name = (request.form.get('plan_name') or '').strip()
         months = request.form.get('months')
         price = request.form.get('price')
+        traffic_limit_gb_raw = request.form.get('traffic_limit_gb')
         try:
             months_int = int(months)
             price_float = float(price)
@@ -2139,11 +2166,28 @@ def create_webhook_app(bot_controller_instance):
             flash('Некорректные значения для месяцев или цены.', 'danger')
             return redirect(url_for('settings_page', tab='hosts'))
 
+        traffic_limit_bytes: int | None = None
+        if traffic_limit_gb_raw not in (None, ''):
+            try:
+                traffic_limit_gb = int(traffic_limit_gb_raw)
+            except (TypeError, ValueError):
+                traffic_limit_gb = 0
+            if traffic_limit_gb > 0:
+                if traffic_limit_gb > 9999:
+                    traffic_limit_gb = 9999
+                traffic_limit_bytes = traffic_limit_gb * 1024 * 1024 * 1024
+
         if not plan_name:
             flash('Название тарифа не может быть пустым.', 'danger')
             return redirect(url_for('settings_page', tab='hosts'))
 
-        ok = update_plan(plan_id, plan_name, months_int, price_float)
+        ok = update_plan(
+            plan_id,
+            plan_name,
+            months_int,
+            price_float,
+            traffic_limit_bytes=traffic_limit_bytes,
+        )
         if ok:
             flash('Тариф обновлён.', 'success')
         else:

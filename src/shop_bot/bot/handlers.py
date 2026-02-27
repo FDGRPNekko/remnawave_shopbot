@@ -1650,11 +1650,23 @@ def get_user_router() -> Router:
                     candidate_local = f"{base_local}-{int(datetime.now().timestamp())}"
                     candidate_email = f"{candidate_local}@bot.local"
                     break
+            trial_limit_bytes: int | None = None
+            try:
+                limit_gb_raw = get_setting("trial_traffic_limit_gb")
+                if limit_gb_raw not in (None, ""):
+                    limit_gb = int(limit_gb_raw)
+                    if limit_gb > 0:
+                        if limit_gb > 9999:
+                            limit_gb = 9999
+                        trial_limit_bytes = limit_gb * 1024 * 1024 * 1024
+            except Exception:
+                trial_limit_bytes = None
 
             result = await remnawave_api.create_or_update_key_on_host(
                 host_name=host_name,
                 email=candidate_email,
-                days_to_add=int(get_setting("trial_duration_days"))
+                days_to_add=int(get_setting("trial_duration_days")),
+                traffic_limit_bytes=trial_limit_bytes,
             )
             if not result:
                 await message.edit_text("❌ Не удалось создать пробный ключ. Ошибка на сервере.")
@@ -1711,6 +1723,50 @@ def get_user_router() -> Router:
         except Exception as e:
             logger.error(f"Error showing key {key_id_to_show}: {e}")
             await callback.message.edit_text("❌ Произошла ошибка при получении данных ключа.")
+
+    @user_router.callback_query(F.data.startswith("clear_devices_"))
+    @registration_required
+    async def clear_devices_handler(callback: types.CallbackQuery):
+        await callback.answer()
+        try:
+            key_id = int(callback.data.split("_")[2])
+        except (IndexError, ValueError):
+            await callback.message.answer("❌ Некорректный идентификатор ключа.")
+            return
+
+        user_id = callback.from_user.id
+        key_data = rw_repo.get_key_by_id(key_id)
+        if not key_data or key_data.get('user_id') != user_id:
+            await callback.message.answer("❌ Ошибка: ключ не найден или не принадлежит вам.")
+            return
+
+        user_uuid = key_data.get('remnawave_user_uuid')
+        if not user_uuid:
+            await callback.message.answer(
+                "❌ Для этого ключа не найден идентификатор пользователя на панели. Обратитесь в поддержку."
+            )
+            return
+
+        host_name = key_data.get('host_name')
+
+        try:
+            ok = await remnawave_api.delete_all_hwid_devices_for_user(
+                user_uuid,
+                host_name=host_name,
+            )
+        except Exception as e:
+            logger.error(f"Failed to delete HWID devices for key {key_id}: {e}")
+            ok = False
+
+        if ok:
+            await callback.message.answer(
+                "✅ Все устройства, подключённые к этой подписке, были очищены.\n"
+                "Если вы использовали подписку на нескольких устройствах, добавьте её заново в приложениях."
+            )
+        else:
+            await callback.message.answer(
+                "❌ Не удалось очистить список устройств. Попробуйте позже или обратитесь в поддержку."
+            )
 
     @user_router.callback_query(F.data.startswith("switch_server_"))
     @registration_required
@@ -3025,6 +3081,16 @@ async def process_successful_payment(bot: Bot, metadata: dict):
         price = float(metadata.get('price'))
         result = None
 
+        plan = get_plan_by_id(plan_id) if plan_id else None
+        traffic_limit_bytes: int | None = None
+        if plan:
+            try:
+                plan_limit = int(plan.get('traffic_limit_bytes') or 0)
+            except Exception:
+                plan_limit = 0
+            if plan_limit > 0:
+                traffic_limit_bytes = plan_limit
+
         if action == "new":
 
             user_data = get_user(user_id) or {}
@@ -3054,7 +3120,8 @@ async def process_successful_payment(bot: Bot, metadata: dict):
         result = await remnawave_api.create_or_update_key_on_host(
             host_name=host_name,
             email=candidate_email,
-            days_to_add=int(months * 30)
+            days_to_add=int(months * 30),
+            traffic_limit_bytes=traffic_limit_bytes,
         )
         if not result:
             await processing_message.edit_text("❌ Не удалось создать/обновить ключ на панели Remnawave.")

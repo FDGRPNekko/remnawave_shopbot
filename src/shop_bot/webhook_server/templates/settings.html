@@ -220,7 +220,15 @@
 									{% for plan in host.plans %}
 									<li>
 										<div class="plan-row">
-											<span class="plan-label">{{ plan.plan_name }} — {{ plan.months }} мес — {{ plan.price|round(0) }} RUB</span>
+											<span class="plan-label">
+												{{ plan.plan_name }} — {{ plan.months }} мес — {{ plan.price|round(0) }} RUB
+												{% set limit_gb = (plan.traffic_limit_bytes or 0) // (1024 * 1024 * 1024) %}
+												{% if limit_gb > 0 %}
+													— лимит {{ limit_gb }} ГБ
+												{% else %}
+													— безлимит
+												{% endif %}
+											</span>
 											<button type="button" class="btn btn-outline-secondary btn-sm pill plan-edit-toggle" data-target="#edit-{{ plan.plan_id }}">Редактировать</button>
 											<form action="{{ url_for('delete_plan_route', plan_id=plan.plan_id) }}" method="post" style="display:inline-block;" data-confirm="Удалить тариф '{{ plan.plan_name }}'?">
 												<input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -233,6 +241,14 @@
 												<input type="text" class="form-control pill" name="plan_name" value="{{ plan.plan_name }}" placeholder="Название" required style="min-width:140px;" />
 												<input type="number" class="form-control pill" name="months" value="{{ plan.months }}" placeholder="Мес." required style="width:80px;" />
 												<input type="number" step="0.01" class="form-control pill" name="price" value="{{ plan.price }}" placeholder="Цена" required style="width:110px;" />
+												<input type="number"
+													   class="form-control pill"
+													   name="traffic_limit_gb"
+													   value="{{ (plan.traffic_limit_bytes or 0) // (1024 * 1024 * 1024) }}"
+													   placeholder="ГБ (0 = безлимит)"
+													   min="0"
+													   max="9999"
+													   style="width:150px;" />
 												<button type="submit" class="btn btn-primary btn-sm pill">Сохранить</button>
 											</form>
 										</div>
@@ -249,6 +265,12 @@
 									<input type="text" class="form-control pill" name="plan_name" placeholder="Название" required />
 									<input type="number" class="form-control pill" name="months" placeholder="Мес." required />
 									<input type="number" step="0.01" class="form-control pill" name="price" placeholder="Цена" required />
+									<input type="number"
+										   class="form-control pill"
+										   name="traffic_limit_gb"
+										   placeholder="ГБ (0 = безлимит)"
+										   min="0"
+										   max="9999" />
 									<button type="submit" class="btn btn-primary btn-sm pill">+</button>
 								</form>
 							</div>
@@ -672,6 +694,19 @@
 						<div class="mb-3">
 							<label class="form-label" for="trial_duration_days">Длительность пробного периода (в днях)</label>
 							<input class="form-control" type="number" id="trial_duration_days" name="trial_duration_days" value="{{ settings.trial_duration_days or '3' }}" />
+						</div>
+						<div class="mb-3">
+							<label class="form-label" for="trial_traffic_limit_gb">Лимит трафика для триала (в ГБ)</label>
+							<input
+								class="form-control"
+								type="number"
+								id="trial_traffic_limit_gb"
+								name="trial_traffic_limit_gb"
+								value="{{ settings.trial_traffic_limit_gb or '3' }}"
+								min="0"
+								max="9999"
+							/>
+							<div class="form-text">0 — безлимит, иначе будет выдан указанный объём трафика на пробный период.</div>
 						</div>
 					</div>
 				</div>

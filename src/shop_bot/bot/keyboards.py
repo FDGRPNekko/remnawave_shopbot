@@ -359,7 +359,27 @@ def create_plans_keyboard(plans: list[dict], action: str, host_name: str, key_id
     builder = InlineKeyboardBuilder()
     for plan in plans:
         callback_data = f"buy_{host_name}_{plan['plan_id']}_{action}_{key_id}"
-        builder.button(text=f"{plan['plan_name']} - {plan['price']:.0f} RUB", callback_data=callback_data)
+        limit_bytes = plan.get('traffic_limit_bytes') or 0
+        if isinstance(limit_bytes, str):
+            try:
+                limit_bytes = int(limit_bytes)
+            except ValueError:
+                limit_bytes = 0
+        if limit_bytes and limit_bytes > 0:
+            try:
+                limit_gb = max(1, int(limit_bytes) // (1024 * 1024 * 1024))
+            except Exception:
+                limit_gb = 0
+        else:
+            limit_gb = 0
+        if limit_gb > 0:
+            suffix = f", {limit_gb} ГБ"
+        else:
+            suffix = ", безлимит"
+        builder.button(
+            text=f"{plan['plan_name']} - {plan['price']:.0f} RUB{suffix}",
+            callback_data=callback_data,
+        )
     back_callback = "manage_keys" if action == "extend" else "buy_new_key"
     builder.button(text="⬅️ Назад", callback_data=back_callback)
     builder.adjust(1) 
@@ -528,20 +548,14 @@ def create_key_info_keyboard(key_id: int, subscription_url: str | None = None) -
     builder = InlineKeyboardBuilder()
     builder.button(text="➕ Продлить этот ключ", callback_data=f"extend_key_{key_id}")
 
-       
-    # Добавляем кнопку "Открыть подписку" если есть subscription_url
     if subscription_url:
         builder.button(text="🔗 Открыть подписку", url=subscription_url)
-    
 
     builder.button(text="📱 Показать QR-код", callback_data=f"show_qr_{key_id}")
     builder.button(text="📖 Инструкция", callback_data=f"howto_vless_{key_id}")
+    builder.button(text="🧹 Очистить устройства", callback_data=f"clear_devices_{key_id}")
     builder.button(text="⬅️ Назад к списку ключей", callback_data="manage_keys")
-    # Если есть кнопка "Открыть подписку", размещаем её отдельно, остальные по одной
-    if subscription_url:
-        builder.adjust(1, 1, 1, 1, 1)
-    else:
-        builder.adjust(1)
+    builder.adjust(1)
     return builder.as_markup()
 
 def create_howto_vless_keyboard() -> InlineKeyboardMarkup:

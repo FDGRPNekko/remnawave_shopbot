@@ -2098,14 +2098,37 @@ def initialize_default_button_configs():
         logging.error(f"Failed to initialize default button configs: {e}")
         return False
 
-def create_plan(host_name: str, plan_name: str, months: int, price: float):
+def create_plan(
+    host_name: str,
+    plan_name: str,
+    months: int,
+    price: float,
+    traffic_limit_bytes: int | None = None,
+    traffic_limit_strategy: str | None = None,
+):
     try:
         host_name = normalize_host_name(host_name)
         with sqlite3.connect(DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO plans (host_name, plan_name, months, price) VALUES (?, ?, ?, ?)",
-                (host_name, plan_name, months, price)
+                """
+                INSERT INTO plans (
+                    host_name,
+                    plan_name,
+                    months,
+                    price,
+                    traffic_limit_bytes,
+                    traffic_limit_strategy
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    host_name,
+                    plan_name,
+                    months,
+                    price,
+                    traffic_limit_bytes,
+                    traffic_limit_strategy or "NO_RESET",
+                ),
             )
             conn.commit()
             logging.info(f"Created new plan '{plan_name}' for host '{host_name}'.")
@@ -2147,14 +2170,28 @@ def delete_plan(plan_id: int):
     except sqlite3.Error as e:
         logging.error(f"Failed to delete plan with id {plan_id}: {e}")
 
-def update_plan(plan_id: int, plan_name: str, months: int, price: float) -> bool:
+def update_plan(
+    plan_id: int,
+    plan_name: str,
+    months: int,
+    price: float,
+    traffic_limit_bytes: int | None = None,
+    traffic_limit_strategy: str | None = None,
+) -> bool:
     try:
         with sqlite3.connect(DB_FILE) as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                "UPDATE plans SET plan_name = ?, months = ?, price = ? WHERE plan_id = ?",
-                (plan_name, months, price, plan_id)
-            )
+            sql = "UPDATE plans SET plan_name = ?, months = ?, price = ?"
+            params: list[Any] = [plan_name, months, price]
+            if traffic_limit_bytes is not None:
+                sql += ", traffic_limit_bytes = ?"
+                params.append(traffic_limit_bytes)
+            if traffic_limit_strategy is not None:
+                sql += ", traffic_limit_strategy = ?"
+                params.append(traffic_limit_strategy or "NO_RESET")
+            sql += " WHERE plan_id = ?"
+            params.append(plan_id)
+            cursor.execute(sql, params)
             conn.commit()
             if cursor.rowcount == 0:
                 logging.warning(f"No plan updated for id {plan_id} (not found).")
