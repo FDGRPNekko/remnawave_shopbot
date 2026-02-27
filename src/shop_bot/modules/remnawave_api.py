@@ -287,7 +287,7 @@ async def ensure_user(
     email = _normalize_email_for_remnawave(email)
     current = await get_user_by_email(email, host_name=host_name)
     expire_iso = _to_iso(expire_at)
-    traffic_limit_strategy = traffic_limit_strategy or "NO_RESET"
+    traffic_limit_strategy = traffic_limit_strategy or "MONTH"
 
     payload: dict[str, Any]
     method: str
